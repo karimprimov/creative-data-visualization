@@ -104,15 +104,19 @@ a
 ```
 
 ```{r}
-
+a.df <- data.frame(values = a$values, lengths = a$lengths)
+names(a.df)[1] <- "Name"
+names(a.df)[2] <- "Thefts"
+a.df
 ```
 
 ```{r}
-
+dfmap_nz <- full_join(a.df, map_nz$tm_shape$shp, by = "Name")
+dfmap_nz
 ```
 
 ```{r}
-
+map_nz$tm_shape$shp$Thefts <- a.df$Thefts
 ```
 
 ```{r}
