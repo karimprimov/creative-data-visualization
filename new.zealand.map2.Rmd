@@ -3,9 +3,30 @@ title: "new.zealand.map2"
 output: html_document
 ---
 
+Websites:
+Data: https://www.kaggle.com/datasets/kkhandekar/stolen-vehicle-dataset?resource=download
+Mapping Plots: https://geocompr.robinlovelace.net/adv-map.html
+
 ```{r}
-f <- "/Users/karimprimov/Desktop/UT Austin/Applied Data Analysis/data.visualization.project/stolenvehicles.csv"
+library(tidyverse)
+library(manipulate)
+library(patchwork)
+library(infer)
+library(broom)
+library(sf)
+library(raster)
+library(dplyr)
+library(spData)
+library(spDataLarge)
+library(tmap)    # for static and interactive maps
+library(leaflet) # for interactive maps
+library(ggplot2) # tidyverse data visualization package
+```
+
+```{r}
+f <- "//Users/karimprimov/Desktop/UT Austin/Applied Data Analysis/creative-data-visualization/stolenvehicles.csv"
 d <- read_csv(f, col_names = TRUE)
+d <- as.data.frame(d)
 ```
 
 
@@ -31,8 +52,55 @@ class(map_nz)
 map_nz$tm_shape$shp$Name
 ```
 
+Renaming "Auckland City" in "d" dataframe to "Auckland"
 ```{r}
+d$Location[which(d$Location=="Auckland City")] <- "Auckland"
+```
 
+```{r}
+unique(d$VehicleType)
+```
+
+
+```{r}
+unique(d$Location)
+```
+
+Notes: 
+```{r}
+sort(map_nz$tm_shape$shp$Name)
+```
+
+Comparing sites in one dataset to sites in another dataset
+```{r}
+cbind(c(sort(unique(d$Location)[which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)]),
+        unique(d$Location)[-which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)],
+        rep("",4)), 
+      c(sort(map_nz$tm_shape$shp$Name)[which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))],
+        sort(map_nz$tm_shape$shp$Name)[-which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))]))
+```
+
+```{r}
+map_nz$tm_shape$shp
+```
+
+Filter out the data for locations which is not found in both datasets
+(for loop counting number of locations in Location column and in Name 
+column of map_nz$tm_shape$shp dataframe), then count number of thefts 
+in each location, then store each of those into a vector, then 
+```{r}
+d2 <- d %>%
+  filter(Location %in% map_nz$tm_shape$shp$Name)
+```
+
+
+```{r}
+unique(d2$Location)
+```
+
+```{r}
+a <- rle(sort(d2$Location))
+a
 ```
 
 ```{r}
@@ -50,6 +118,20 @@ map_nz$tm_shape$shp$Name
 ```{r}
 
 ```
+
+
+```{r}
+#d$VehicleType <- as.factor(d$VehicleType)
+```
+
+```{r}
+#d$VehicleModel <- as.factor(d$VehicleModel)
+```
+
+```{r}
+#d$Location <- as.factor(d$Location)
+```
+
 
 
 # map_nz1 = map_nz +
