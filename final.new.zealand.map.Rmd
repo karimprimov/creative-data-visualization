@@ -1,0 +1,141 @@
+---
+title: "new.zealand.map2"
+output: html_document
+---
+
+Websites:
+Data: https://www.kaggle.com/datasets/kkhandekar/stolen-vehicle-dataset?resource=download
+Mapping Plots: https://geocompr.robinlovelace.net/adv-map.html
+
+Installing libraries
+```{r}
+library(tidyverse)
+library(manipulate)
+library(patchwork)
+library(infer)
+library(broom)
+library(sf)
+library(raster)
+library(dplyr)
+library(spData)
+library(spDataLarge)
+library(tmap)    # for static and interactive maps
+library(leaflet) # for interactive maps
+library(ggplot2) # tidyverse data visualization package
+```
+
+Importing the dataset from Kaggle
+```{r}
+f <- "//Users/karimprimov/Desktop/UT Austin/Applied Data Analysis/creative-data-visualization/stolenvehicles.csv"
+d <- read_csv(f, col_names = TRUE)
+d <- as.data.frame(d)
+```
+
+Mapping New Zealand with borders of each region using the tm_shape in the tmap function
+```{r}
+# Add fill layer to nz shape
+tm_shape(nz) +
+  tm_fill() 
+# Add border layer to nz shape
+tm_shape(nz) +
+  tm_borders() 
+# Add fill and border layers to nz shape
+tm_shape(nz) +
+  tm_fill() +
+  tm_borders() 
+```
+
+Getting names of each of the regions within New Zealand in the tmap New Zealand raster data shp dataframe
+```{r}
+map_nz$tm_shape$shp$Name
+```
+
+Renaming "Auckland City" in "d" dataframe to "Auckland" to match the names found in both the Kaggle dataset and the tmap New Zealand raster data shp dataframe
+```{r}
+d$Location[which(d$Location=="Auckland City")] <- "Auckland"
+```
+
+Getting the names of each of the regions within New Zealand in the Kaggle dataset
+```{r}
+unique(d$Location)
+```
+
+
+```{r}
+sort(map_nz$tm_shape$shp$Name)
+```
+
+Comparing sites in the Kaggle dataset to sites in the tmap New Zealand dataset
+```{r}
+cbind(c(sort(unique(d$Location)[which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)]),
+        unique(d$Location)[-which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)],
+        rep("",4)), 
+      c(sort(map_nz$tm_shape$shp$Name)[which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))],
+        sort(map_nz$tm_shape$shp$Name)[-which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))]))
+```
+
+Interestingly, only seven regions overlap between both datasets, implying that there will be a large chunk of missing data in the resulting map
+
+Looking at the tmap dataframe where the different New Zealand regions have data on land area, population, and other variables. The objective in this case would be to add a new column for regions with data on vehicle thefts, and then map thefts per region using the raster data found in the tmap dataframe
+```{r}
+map_nz$tm_shape$shp
+```
+
+Filter out the data for locations which is not found in both datasets
+(for loop counting number of locations in Location column and in Name 
+column of map_nz$tm_shape$shp dataframe), then count number of thefts 
+in each location, then store each of those into a vector
+```{r}
+d2 <- d %>%
+  filter(Location %in% map_nz$tm_shape$shp$Name)
+d2
+```
+
+Identifying the geographic regions found after filtering the "d" dataframe to create the new "d2" dataframe. 
+```{r}
+unique(d2$Location)
+```
+
+Counting the number of thefts per geographic location using the "rle" function. 
+```{r}
+a <- rle(sort(d2$Location))
+a
+```
+
+Creating a new dataframe "a.df" with the number of thefts per geographic location 
+```{r}
+a.df <- data.frame(values = a$values, lengths = a$lengths)
+names(a.df)[1] <- "Name"
+names(a.df)[2] <- "Thefts"
+a.df
+```
+
+Full joining the "a.df" dataframe with the "map_nz$tm_shape$shp" dataframe with the raster data to plot the number of thefts per region on the map. This new, full-joined dataframe is called "dfmap_nz". 
+```{r}
+dfmap_nz <- full_join(a.df, map_nz$tm_shape$shp, by = "Name")
+dfmap_nz
+```
+Properly formatting the "dfmap_nz" dataframe to plot the thefts per geographic location. 
+```{r}
+dfmap_nz <- st_sf(dfmap_nz)
+```
+
+Plotting the number of thefts per geographic region in New Zealand, with some missing data. 
+```{r}
+# Add fill layer to nz shape
+tm_shape(dfmap_nz) +
+  tm_fill() 
+# Add border layer to nz shape
+tm_shape(dfmap_nz) +
+  tm_borders() 
+# Add fill and border layers to nz shape
+tm_shape(dfmap_nz) +
+  tm_fill("Thefts") +
+  tm_borders() +
+  tm_text("Name", size = 0.6)
+```
+Overall, despite missing data, Auckland and Canterbury were found as the two places with the highest number of vehicle thefts. This is not suprising, however, since Auckland is the capital of New Zealand and its most popular city and urban area. 
+
+
+
+
