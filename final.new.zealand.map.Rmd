@@ -47,7 +47,7 @@ tm_shape(nz) +
 
 Getting names of each of the regions within New Zealand in the tmap New Zealand raster data shp dataframe
 ```{r}
-map_nz$tm_shape$shp$Name
+nz$Name
 ```
 
 Renaming "Auckland City" in "d" dataframe to "Auckland" to match the names found in both the Kaggle dataset and the tmap New Zealand raster data shp dataframe
@@ -62,23 +62,23 @@ unique(d$Location)
 
 
 ```{r}
-sort(map_nz$tm_shape$shp$Name)
+sort(nz$Name)
 ```
 
 Comparing sites in the Kaggle dataset to sites in the tmap New Zealand dataset
 ```{r}
-cbind(c(sort(unique(d$Location)[which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)]),
-        unique(d$Location)[-which(unique(d$Location) %in% map_nz$tm_shape$shp$Name)],
+cbind(c(sort(unique(d$Location)[which(unique(d$Location) %in% nz$Name)]),
+        unique(d$Location)[-which(unique(d$Location) %in% nz$Name)],
         rep("",4)), 
-      c(sort(map_nz$tm_shape$shp$Name)[which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))],
-        sort(map_nz$tm_shape$shp$Name)[-which(sort(map_nz$tm_shape$shp$Name) %in% unique(d$Location))]))
+      c(sort(nz$Name)[which(sort(nz$Name) %in% unique(d$Location))],
+        sort(nz$Name)[-which(sort(nz$Name) %in% unique(d$Location))]))
 ```
 
 Interestingly, only seven regions overlap between both datasets, implying that there will be a large chunk of missing data in the resulting map
 
 Looking at the tmap dataframe where the different New Zealand regions have data on land area, population, and other variables. The objective in this case would be to add a new column for regions with data on vehicle thefts, and then map thefts per region using the raster data found in the tmap dataframe
 ```{r}
-map_nz$tm_shape$shp
+nz
 ```
 
 Filter out the data for locations which is not found in both datasets
@@ -87,7 +87,7 @@ column of map_nz$tm_shape$shp dataframe), then count number of thefts
 in each location, then store each of those into a vector
 ```{r}
 d2 <- d %>%
-  filter(Location %in% map_nz$tm_shape$shp$Name)
+  filter(Location %in% nz$Name)
 d2
 ```
 
@@ -112,12 +112,13 @@ a.df
 
 Full joining the "a.df" dataframe with the "map_nz$tm_shape$shp" dataframe with the raster data to plot the number of thefts per region on the map. This new, full-joined dataframe is called "dfmap_nz". 
 ```{r}
-dfmap_nz <- full_join(a.df, map_nz$tm_shape$shp, by = "Name")
+dfmap_nz <- full_join(a.df, nz, by = "Name")
 dfmap_nz
 ```
 Properly formatting the "dfmap_nz" dataframe to plot the thefts per geographic location. 
 ```{r}
 dfmap_nz <- st_sf(dfmap_nz)
+dfmap_nz
 ```
 
 Plotting the number of thefts per geographic region in New Zealand, with some missing data. 
